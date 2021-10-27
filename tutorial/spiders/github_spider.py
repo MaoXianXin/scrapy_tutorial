@@ -5,6 +5,12 @@ import hashlib
 import re
 import urllib3
 from pymongo import MongoClient
+import pandas as pd
+csv = pd.read_csv('C:/Users/My104/Downloads/bq-results-20211026-112112-245923d7k343.csv')
+
+project_url = list(csv['repo'])
+for i in range(len(project_url)):
+    project_url[i] = "https://github.com/" + project_url[i]
 
 
 client = MongoClient('localhost', 27017)
@@ -44,19 +50,39 @@ headers = {"Proxy-Authorization": auth,
 
 class QuotesSpider(scrapy.Spider):
     name = "github"
-    start_urls = [
-        'https://github.com/rajeevsrao?tab=followers',
-    ]
+    start_urls = project_url
 
     def parse(self, response):
-        if float(re.findall(r"\d+\.?\d*", response.css('span.text-bold.color-text-primary')[0].get())[0]) > 0:
-            for follower in response.css('a.d-inline-block.no-underline.mb-1::attr(href)'):
-                d = {
-                    'username': follower.get()[1:],
-                    'url': response.urljoin(follower.get()),
-                }
-
-                collection.insert(d)
-
-                next_link = "https://github.com/" + follower.get()[1:] + "?tab=followers"
-                yield scrapy.Request(next_link, callback=self.parse, meta=proxy, headers=headers)
+        languages = response.css('span.color-fg-default.text-bold.mr-1')
+        if languages == []:
+            d = {
+                'repo_name': '/'.join(response.url.split('/')[-2:]),
+                'language': 1
+            }
+            collection.insert(d)
+        else:
+            print('----------', len(languages))
+            d = {
+                'repo_name': '/'.join(response.url.split('/')[-2:]),
+                'language': [re.findall(r'\>((?:.|n)*?)\<', languages[0].get())[0]]
+            }
+            if len(languages) >= 2:
+                for i in range(1, len(languages)):
+                    # d['language' + str(i)] = re.findall(r'\>((?:.|n)*?)\<', languages[i].get())[0]
+                    d['language'].append(re.findall(r'\>((?:.|n)*?)\<', languages[i].get())[0])
+            # d = {
+            #     'repo_name': '/'.join(response.url.split('/')[-2:]),
+            #     'language': re.findall(r'\>((?:.|n)*?)\<', languages[0].get())[0]
+            # }
+            collection.insert(d)
+        # if float(re.findall(r"\d+\.?\d*", response.css('span.text-bold.color-text-primary')[0].get())[0]) > 0:
+        #     for follower in response.css('span.color-fg-default.text-bold.mr-1'):
+        #         d = {
+        #             'username': follower.get()[1:],
+        #             'url': response.urljoin(follower.get()),
+        #         }
+        #
+        #         collection.insert(d)
+        #
+        #         next_link = "https://github.com/" + follower.get()[1:] + "?tab=followers"
+        #         yield scrapy.Request(next_link, callback=self.parse, meta=proxy, headers=headers)
