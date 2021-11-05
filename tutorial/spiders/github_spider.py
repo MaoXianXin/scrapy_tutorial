@@ -15,7 +15,7 @@ for i in range(len(project_url)):
 
 client = MongoClient('localhost', 27017)
 db = client['github']
-collection = db['user']
+collection = db['user1']
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 _version = sys.version_info
@@ -59,22 +59,38 @@ class QuotesSpider(scrapy.Spider):
                 'repo_name': '/'.join(response.url.split('/')[-2:]),
                 'language': 1
             }
-            collection.insert(d)
+            # collection.insert(d)
         else:
             print('----------', len(languages))
+            languages_list = response.css('.d-inline-flex.flex-items-center.flex-nowrap.Link--secondary.no-underline.text-small.mr-3')
+            language = languages_list[0].css('span').getall()[0]
+            language_percent = languages_list[0].css('span').getall()[1]
+            print(language, language_percent)
             d = {
                 'repo_name': '/'.join(response.url.split('/')[-2:]),
-                'language': [re.findall(r'\>((?:.|n)*?)\<', languages[0].get())[0]]
+                'language': [{re.findall(r'\>((?:.|n)*?)\<', language)[0]: re.findall(r'\>((?:.|n)*?)\<', language_percent)[0]}]
             }
-            if len(languages) >= 2:
-                for i in range(1, len(languages)):
+            if len(languages_list) >= 2:
+                for i in range(1, len(languages_list)):
+                    language = languages_list[i].css('span').getall()[0]
+                    language_percent = languages_list[i].css('span').getall()[1]
+                    print(language, language_percent)
                     # d['language' + str(i)] = re.findall(r'\>((?:.|n)*?)\<', languages[i].get())[0]
-                    d['language'].append(re.findall(r'\>((?:.|n)*?)\<', languages[i].get())[0])
+                    d['language'].append({re.findall(r'\>((?:.|n)*?)\<', language)[0]: re.findall(r'\>((?:.|n)*?)\<', language_percent)[0]})
+
+        topics = response.css('a.topic-tag.topic-tag-link')
+        if topics == []:
+            d['topics'] = 1
+        else:
+            d['topics'] = [re.findall(r'\n((?:.|n)*?)\n', topics[0].get())[0].strip()]
+            if len(topics) >= 2:
+                for i in range(1, len(topics)):
+                    d['topics'].append(re.findall(r'\n((?:.|n)*?)\n', topics[i].get())[0].strip())
             # d = {
             #     'repo_name': '/'.join(response.url.split('/')[-2:]),
             #     'language': re.findall(r'\>((?:.|n)*?)\<', languages[0].get())[0]
             # }
-            collection.insert(d)
+        collection.insert(d)
         # if float(re.findall(r"\d+\.?\d*", response.css('span.text-bold.color-text-primary')[0].get())[0]) > 0:
         #     for follower in response.css('span.color-fg-default.text-bold.mr-1'):
         #         d = {
