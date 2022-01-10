@@ -6,7 +6,7 @@ import re
 import urllib3
 from pymongo import MongoClient
 import pandas as pd
-csv = pd.read_csv('C:/Users/My104/Downloads/bq-results-20211026-112112-245923d7k343.csv')
+csv = pd.read_csv('/home/csdn/Downloads/scrapy_tutorial/tutorial/spiders/bquxjob_16ea03a8_17de6417bba.csv')
 
 project_url = list(csv['repo'])
 for i in range(len(project_url)):
