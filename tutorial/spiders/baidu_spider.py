@@ -10,7 +10,7 @@ from pymongo import MongoClient
 import pandas as pd
 from lxml import etree
 from bs4 import BeautifulSoup
-csv = pd.read_csv('/home/csdn/Downloads/scrapy_tutorial/tutorial/spiders/CSDN_landing1.csv')
+csv = pd.read_csv('/home/csdn/Downloads/scrapy_tutorial/tutorial/spiders/csv_merge.csv')
 
 project_url = list(csv['术语'])
 for i in range(len(project_url)):
@@ -19,7 +19,7 @@ for i in range(len(project_url)):
 
 client = MongoClient('localhost', 27017)
 db = client['github']
-collection = db['user3']
+collection = db['user4']
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 _version = sys.version_info
